@@ -16,34 +16,35 @@ export default function GoalsPage() {
   const [editValue, setEditValue] = useState("");
 
   useEffect(() => {
-    setGoals(getGoals());
+    getGoals().then(setGoals);
   }, []);
 
-  function handleAdd(e: React.FormEvent) {
+  async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!title || !current || !target) return;
-    const updated = addGoal({
+    await addGoal({
       title,
       current: parseFloat(current),
       target: parseFloat(target),
       unit,
       deadline,
     });
-    setGoals(updated);
+    setGoals(await getGoals());
     setTitle(""); setCurrent(""); setTarget(""); setUnit(""); setDeadline("");
     setShowForm(false);
   }
 
-  function handleUpdate(id: string) {
+  async function handleUpdate(id: string) {
     if (!editValue) return;
-    const updated = updateGoal(id, { current: parseFloat(editValue) });
-    setGoals(updated);
+    await updateGoal(id, { current: parseFloat(editValue) });
+    setGoals(await getGoals());
     setEditingId(null);
     setEditValue("");
   }
 
-  function handleDelete(id: string) {
-    setGoals(deleteGoal(id));
+  async function handleDelete(id: string) {
+    await deleteGoal(id);
+    setGoals(await getGoals());
   }
 
   function pct(current: number, target: number) {

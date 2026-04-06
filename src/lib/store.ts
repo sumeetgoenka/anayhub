@@ -1,4 +1,4 @@
-// Simple localStorage-based store until Supabase is connected
+import { supabase } from "./supabase";
 
 export interface StudyEntry {
   id: string;
@@ -13,15 +13,15 @@ export interface Todo {
   text: string;
   completed: boolean;
   priority: "low" | "medium" | "high";
-  createdAt: string;
+  created_at: string;
 }
 
 export interface CalendarEvent {
   id: string;
   title: string;
   date: string;
-  startTime: string;
-  endTime: string;
+  start_time: string;
+  end_time: string;
   color: string;
 }
 
@@ -40,104 +40,62 @@ export interface NewsItem {
   summary: string;
   source: string;
   url: string;
-  fetchedAt: string;
-}
-
-function getStore<T>(key: string, fallback: T[]): T[] {
-  if (typeof window === "undefined") return fallback;
-  try {
-    const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function setStore<T>(key: string, data: T[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(key, JSON.stringify(data));
+  fetched_at: string;
 }
 
 // Study entries
-export function getStudyEntries(): StudyEntry[] {
-  return getStore<StudyEntry>("anayhub_study", []);
+export async function getStudyEntries(): Promise<StudyEntry[]> {
+  const { data } = await supabase.from("study_entries").select("*").order("date", { ascending: false });
+  return data ?? [];
 }
-export function addStudyEntry(entry: Omit<StudyEntry, "id">) {
-  const entries = getStudyEntries();
-  entries.push({ ...entry, id: crypto.randomUUID() });
-  setStore("anayhub_study", entries);
-  return entries;
+export async function addStudyEntry(entry: Omit<StudyEntry, "id">) {
+  const { data } = await supabase.from("study_entries").insert(entry).select().single();
+  return data;
 }
 
 // Todos
-export function getTodos(): Todo[] {
-  return getStore<Todo>("anayhub_todos", []);
+export async function getTodos(): Promise<Todo[]> {
+  const { data } = await supabase.from("todos").select("*").order("created_at", { ascending: true });
+  return data ?? [];
 }
-export function addTodo(todo: Omit<Todo, "id" | "createdAt">) {
-  const todos = getTodos();
-  todos.push({ ...todo, id: crypto.randomUUID(), createdAt: new Date().toISOString() });
-  setStore("anayhub_todos", todos);
-  return todos;
+export async function addTodo(todo: Omit<Todo, "id" | "created_at">) {
+  const { data } = await supabase.from("todos").insert(todo).select().single();
+  return data;
 }
-export function toggleTodo(id: string) {
-  const todos = getTodos();
-  const todo = todos.find((t) => t.id === id);
-  if (todo) todo.completed = !todo.completed;
-  setStore("anayhub_todos", todos);
-  return todos;
+export async function toggleTodo(id: string, completed: boolean) {
+  const { data } = await supabase.from("todos").update({ completed }).eq("id", id).select().single();
+  return data;
 }
-export function deleteTodo(id: string) {
-  const todos = getTodos().filter((t) => t.id !== id);
-  setStore("anayhub_todos", todos);
-  return todos;
+export async function deleteTodo(id: string) {
+  await supabase.from("todos").delete().eq("id", id);
 }
 
 // Calendar events
-export function getEvents(): CalendarEvent[] {
-  return getStore<CalendarEvent>("anayhub_events", []);
+export async function getEvents(): Promise<CalendarEvent[]> {
+  const { data } = await supabase.from("calendar_events").select("*").order("date", { ascending: true });
+  return data ?? [];
 }
-export function addEvent(event: Omit<CalendarEvent, "id">) {
-  const events = getEvents();
-  events.push({ ...event, id: crypto.randomUUID() });
-  setStore("anayhub_events", events);
-  return events;
+export async function addEvent(event: Omit<CalendarEvent, "id">) {
+  const { data } = await supabase.from("calendar_events").insert(event).select().single();
+  return data;
 }
-export function deleteEvent(id: string) {
-  const events = getEvents().filter((e) => e.id !== id);
-  setStore("anayhub_events", events);
-  return events;
+export async function deleteEvent(id: string) {
+  await supabase.from("calendar_events").delete().eq("id", id);
 }
 
 // Goals
-export function getGoals(): Goal[] {
-  return getStore<Goal>("anayhub_goals", [
-    { id: "1", title: "Chess Elo", current: 1200, target: 2200, unit: "Elo", deadline: "2027-04-01" },
-    { id: "2", title: "YouTube Subscribers", current: 90, target: 100000, unit: "subs", deadline: "2027-04-01" },
-  ]);
+export async function getGoals(): Promise<Goal[]> {
+  const { data } = await supabase.from("goals").select("*").order("created_at", { ascending: true });
+  return data ?? [];
 }
-export function addGoal(goal: Omit<Goal, "id">) {
-  const goals = getGoals();
-  goals.push({ ...goal, id: crypto.randomUUID() });
-  setStore("anayhub_goals", goals);
-  return goals;
+export async function addGoal(goal: Omit<Goal, "id">) {
+  const { data } = await supabase.from("goals").insert(goal).select().single();
+  return data;
 }
-export function updateGoal(id: string, updates: Partial<Goal>) {
-  const goals = getGoals();
-  const goal = goals.find((g) => g.id === id);
-  if (goal) Object.assign(goal, updates);
-  setStore("anayhub_goals", goals);
-  return goals;
+export async function updateGoal(id: string, updates: Partial<Goal>) {
+  const { data } = await supabase.from("goals").update(updates).eq("id", id).select().single();
+  return data;
 }
-export function deleteGoal(id: string) {
-  const goals = getGoals().filter((g) => g.id !== id);
-  setStore("anayhub_goals", goals);
-  return goals;
-}
-
-// News
-export function getNews(): NewsItem[] {
-  return getStore<NewsItem>("anayhub_news", []);
-}
-export function setNews(items: NewsItem[]) {
-  setStore("anayhub_news", items);
+export async function deleteGoal(id: string) {
+  await supabase.from("goals").delete().eq("id", id);
 }

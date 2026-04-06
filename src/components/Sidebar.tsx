@@ -8,12 +8,14 @@ import {
   Calendar,
   Newspaper,
   Target,
+  Clock,
 } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/todos", label: "To-Do List", icon: CheckSquare },
   { href: "/calendar", label: "Calendar", icon: Calendar },
+  { href: "/schedule", label: "Schedule", icon: Clock },
   { href: "/goals", label: "Goals", icon: Target },
   { href: "/news", label: "Daily News", icon: Newspaper },
 ];

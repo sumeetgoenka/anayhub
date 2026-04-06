@@ -16,10 +16,13 @@ export default function Dashboard() {
   const [goalsCount, setGoalsCount] = useState(0);
 
   useEffect(() => {
-    setEntries(getStudyEntries());
-    const todos = getTodos();
-    setTodosCount({ total: todos.length, done: todos.filter((t) => t.completed).length });
-    setGoalsCount(getGoals().length);
+    async function load() {
+      const [e, todos, goals] = await Promise.all([getStudyEntries(), getTodos(), getGoals()]);
+      setEntries(e);
+      setTodosCount({ total: todos.length, done: todos.filter((t) => t.completed).length });
+      setGoalsCount(goals.length);
+    }
+    load();
   }, []);
 
   const chartData = Array.from({ length: 7 }, (_, i) => {
@@ -34,20 +37,13 @@ export default function Dashboard() {
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const todayHours = entries.filter((e) => e.date === todayStr).reduce((s, e) => s + e.hours, 0);
 
-  function handleAddEntry(e: React.FormEvent) {
+  async function handleAddEntry(e: React.FormEvent) {
     e.preventDefault();
     if (!subject || !hours) return;
-    const updated = addStudyEntry({
-      date: todayStr,
-      subject,
-      hours: parseFloat(hours),
-      notes,
-    });
+    await addStudyEntry({ date: todayStr, subject, hours: parseFloat(hours), notes });
+    const updated = await getStudyEntries();
     setEntries(updated);
-    setSubject("");
-    setHours("");
-    setNotes("");
-    setShowForm(false);
+    setSubject(""); setHours(""); setNotes(""); setShowForm(false);
   }
 
   return (
@@ -55,9 +51,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-[var(--text-secondary)] mt-1">
-            Welcome back, Anay. {format(new Date(), "EEEE, MMMM d")}
-          </p>
+          <p className="text-[var(--text-secondary)] mt-1">Welcome back, Anay. {format(new Date(), "EEEE, MMMM d")}</p>
         </div>
         <button className="btn-primary flex items-center gap-2" onClick={() => setShowForm(!showForm)}>
           <Plus size={16} /> Log Study
@@ -128,10 +122,7 @@ export default function Dashboard() {
             <BarChart data={chartData}>
               <XAxis dataKey="label" stroke="var(--text-secondary)" fontSize={12} />
               <YAxis stroke="var(--text-secondary)" fontSize={12} />
-              <Tooltip
-                contentStyle={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 8 }}
-                labelStyle={{ color: "var(--text-primary)" }}
-              />
+              <Tooltip contentStyle={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 8 }} labelStyle={{ color: "var(--text-primary)" }} />
               <Bar dataKey="hours" fill="var(--accent)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -144,7 +135,7 @@ export default function Dashboard() {
           <p className="text-[var(--text-secondary)] text-sm">No study sessions logged yet. Click &quot;Log Study&quot; to start tracking!</p>
         ) : (
           <div className="space-y-2">
-            {entries.slice(-10).reverse().map((entry) => (
+            {entries.slice(0, 10).map((entry) => (
               <div key={entry.id} className="flex items-center justify-between py-2 border-b border-[var(--border)] last:border-0">
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium">{entry.subject}</span>

@@ -19,26 +19,28 @@ export default function CalendarPage() {
   const [color, setColor] = useState(COLORS[0]);
 
   useEffect(() => {
-    setEvents(getEvents());
+    getEvents().then(setEvents);
   }, []);
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  function handleAdd(e: React.FormEvent) {
+  async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!title) return;
-    setEvents(addEvent({ title, date, startTime, endTime, color }));
+    await addEvent({ title, date, start_time: startTime, end_time: endTime, color });
+    setEvents(await getEvents());
     setTitle("");
     setShowForm(false);
   }
 
-  function handleDelete(id: string) {
-    setEvents(deleteEvent(id));
+  async function handleDelete(id: string) {
+    await deleteEvent(id);
+    setEvents(await getEvents());
   }
 
   function getEventStyle(event: CalendarEvent) {
-    const [sh, sm] = event.startTime.split(":").map(Number);
-    const [eh, em] = event.endTime.split(":").map(Number);
+    const [sh, sm] = event.start_time.split(":").map(Number);
+    const [eh, em] = event.end_time.split(":").map(Number);
     const top = ((sh - 6) + sm / 60) * 60; // 60px per hour
     const height = ((eh - sh) + (em - sm) / 60) * 60;
     return { top: `${top}px`, height: `${Math.max(height, 20)}px` };
@@ -137,10 +139,10 @@ export default function CalendarPage() {
                           key={ev.id}
                           className="absolute left-1 right-1 rounded-md px-1 py-0.5 text-xs text-white overflow-hidden cursor-pointer group/ev z-10"
                           style={{ ...getEventStyle(ev), background: ev.color }}
-                          title={`${ev.title} (${ev.startTime}-${ev.endTime})`}
+                          title={`${ev.title} (${ev.start_time}-${ev.end_time})`}
                         >
                           <div className="font-medium truncate">{ev.title}</div>
-                          <div className="text-[10px] opacity-80">{ev.startTime}-{ev.endTime}</div>
+                          <div className="text-[10px] opacity-80">{ev.start_time}-{ev.end_time}</div>
                           <button
                             onClick={() => handleDelete(ev.id)}
                             className="absolute top-0.5 right-0.5 opacity-0 group-hover/ev:opacity-100 p-0.5"

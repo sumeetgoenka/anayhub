@@ -11,22 +11,25 @@ export default function TodosPage() {
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
 
   useEffect(() => {
-    setTodos(getTodos());
+    getTodos().then(setTodos);
   }, []);
 
-  function handleAdd(e: React.FormEvent) {
+  async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!text.trim()) return;
-    setTodos(addTodo({ text: text.trim(), completed: false, priority }));
+    await addTodo({ text: text.trim(), completed: false, priority });
+    setTodos(await getTodos());
     setText("");
   }
 
-  function handleToggle(id: string) {
-    setTodos(toggleTodo(id));
+  async function handleToggle(id: string, completed: boolean) {
+    await toggleTodo(id, !completed);
+    setTodos(await getTodos());
   }
 
-  function handleDelete(id: string) {
-    setTodos(deleteTodo(id));
+  async function handleDelete(id: string) {
+    await deleteTodo(id);
+    setTodos(await getTodos());
   }
 
   const filtered = todos.filter((t) => {
@@ -91,7 +94,7 @@ export default function TodosPage() {
         ) : (
           filtered.map((todo) => (
             <div key={todo.id} className="card flex items-center gap-3 group">
-              <button onClick={() => handleToggle(todo.id)} className="shrink-0">
+              <button onClick={() => handleToggle(todo.id, todo.completed)} className="shrink-0">
                 {todo.completed ? (
                   <CheckCircle2 size={22} className="text-[var(--success)]" />
                 ) : (
