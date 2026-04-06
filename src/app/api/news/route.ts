@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import Groq from "groq-sdk";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ articles: [], error: "GROQ_API_KEY not configured" }, { status: 500 });
+    }
+    const groq = new Groq({ apiKey });
+
     const completion = await groq.chat.completions.create({
       model: "compound-beta-mini",
       messages: [
